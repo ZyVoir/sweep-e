@@ -26,8 +26,18 @@ class DetailActivity : AppCompatActivity() {
 
     private lateinit var btn_end : Button
 
-    val SWITCHSTATE : Array<String> = arrayOf("ON", "OFF")
-    val MOVEMENTSTATE : Array<String> = arrayOf("STOP", "LEFT", "RIGHT", "UP", "DOWN")
+    val MOVEMENTSTATE : Array<String> = arrayOf("IDLE", "LEFT", "RGHT", "FWRD", "BACK")
+
+    private fun refreshState(){
+        fanSwitch.isChecked = false
+        autoModeSwitch.isChecked = false
+        speedSlider.setValues(50f)
+
+        Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
+        Firebase.setDatabaseValue("FAN", isChecked = fanSwitch.isChecked)
+        Firebase.setDatabaseValue("AUTO", isChecked = autoModeSwitch.isChecked)
+        Firebase.setDatabaseValue("SPEED", speedValue = speedSlider.values[0])
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,12 +51,14 @@ class DetailActivity : AppCompatActivity() {
         fanSwitch = findViewById(R.id.fanSwitch)
         fanSwitch.setOnCheckedChangeListener { _, isChecked ->
             println("Fan is" + (if (isChecked) "check" else "uncheck"))
+            Firebase.setDatabaseValue( "FAN",isChecked = isChecked)
         }
 
             // auto mode
         autoModeSwitch = findViewById(R.id.autoModeSwitch)
         autoModeSwitch.setOnCheckedChangeListener { _, isChecked ->
             println("Auto Mode is " + if(isChecked) "check" else "uncheck")
+            Firebase.setDatabaseValue( "AUTO",isChecked = isChecked)
         }
 
             // speed slider
@@ -55,12 +67,12 @@ class DetailActivity : AppCompatActivity() {
         speedSlider.valueTo = 100f
 
         speedSlider.addOnChangeListener{ slider, value, fromuser ->
-            val speedMultiplier = slider.values
+            val speedMultiplier = slider.values[0]
             lastSliderValueRunnable?.let { handler.removeCallbacks(it) }
             lastSliderValueRunnable = Runnable {
                 // TOOD : perform write to RTDB
-                println("$speedMultiplier")
-
+                println("${speedMultiplier}")
+                Firebase.setDatabaseValue( "SPEED", speedValue = speedMultiplier)
             }
             handler.postDelayed(lastSliderValueRunnable!!, 200)
         }
@@ -72,9 +84,11 @@ class DetailActivity : AppCompatActivity() {
             when (event.action){
                 MotionEvent.ACTION_DOWN -> {
                     println("Left button hold")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[1])
                 }
                 MotionEvent.ACTION_UP -> {
                     println("Left button up")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
                 }
             }
             true
@@ -85,9 +99,11 @@ class DetailActivity : AppCompatActivity() {
             when (event.action){
                 MotionEvent.ACTION_DOWN -> {
                     println("Right button hold")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[2])
                 }
                 MotionEvent.ACTION_UP -> {
                     println("Right button up")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
                 }
             }
             true
@@ -98,9 +114,11 @@ class DetailActivity : AppCompatActivity() {
             when (event.action){
                 MotionEvent.ACTION_DOWN -> {
                     println("Up button hold")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[3])
                 }
                 MotionEvent.ACTION_UP -> {
                     println("Up button up")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
                 }
             }
             true
@@ -111,9 +129,11 @@ class DetailActivity : AppCompatActivity() {
             when (event.action){
                 MotionEvent.ACTION_DOWN -> {
                     println("Down button hold")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[4])
                 }
                 MotionEvent.ACTION_UP -> {
                     println("Down button up")
+                    Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
                 }
             }
             true
@@ -123,7 +143,10 @@ class DetailActivity : AppCompatActivity() {
         // button end
         btn_end = findViewById(R.id.btn_end)
         btn_end.setOnClickListener {
+            refreshState()
             finish()
         }
+
+        refreshState()
     }
 }
