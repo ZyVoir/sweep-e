@@ -18,7 +18,7 @@ class Firebase {
             dbref.setValue(isChecked)
         }
 
-        fun setDatabaseValue(refPath : String ,speedValue : Float){
+        fun setDatabaseValue(refPath : String ,speedValue : Double){
             val dbref : DatabaseReference = db.getReference(refPath)
             dbref.setValue(speedValue)
         }

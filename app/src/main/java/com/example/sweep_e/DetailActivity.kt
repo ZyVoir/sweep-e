@@ -9,6 +9,8 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.Switch
 import com.google.android.material.slider.RangeSlider
+import java.text.DecimalFormat
+import kotlin.math.roundToInt
 
 class DetailActivity : AppCompatActivity() {
 
@@ -36,7 +38,7 @@ class DetailActivity : AppCompatActivity() {
         Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
         Firebase.setDatabaseValue("FAN", isChecked = fanSwitch.isChecked)
         Firebase.setDatabaseValue("AUTO", isChecked = autoModeSwitch.isChecked)
-        Firebase.setDatabaseValue("SPEED", speedValue = speedSlider.values[0])
+        Firebase.setDatabaseValue("SPEED", speedValue = speedSlider.values[0].toDouble())
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -67,11 +69,11 @@ class DetailActivity : AppCompatActivity() {
         speedSlider.valueTo = 100f
 
         speedSlider.addOnChangeListener{ slider, value, fromuser ->
-            val speedMultiplier = slider.values[0]
+            val decimalFormat = DecimalFormat("#.##")
+            val speedMultiplier = decimalFormat.format(slider.values[0]).toDouble()
+
             lastSliderValueRunnable?.let { handler.removeCallbacks(it) }
             lastSliderValueRunnable = Runnable {
-                // TOOD : perform write to RTDB
-                println("${speedMultiplier}")
                 Firebase.setDatabaseValue( "SPEED", speedValue = speedMultiplier)
             }
             handler.postDelayed(lastSliderValueRunnable!!, 200)
