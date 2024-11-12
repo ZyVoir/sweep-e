@@ -1,18 +1,29 @@
 package com.example.sweep_e
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
+import android.util.Base64
+import android.util.Log
 import android.view.MotionEvent
 import android.widget.Button
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.Switch
 import com.google.android.material.slider.RangeSlider
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.ValueEventListener
 import java.text.DecimalFormat
-import kotlin.math.roundToInt
 
 class DetailActivity : AppCompatActivity() {
+
+    private lateinit var camDB : DatabaseReference
+    private lateinit var camView : ImageView
 
     private lateinit var speedSlider : RangeSlider
     private val handler = Handler()
@@ -30,15 +41,25 @@ class DetailActivity : AppCompatActivity() {
 
     val MOVEMENTSTATE : Array<String> = arrayOf("IDLE", "LEFT", "RGHT", "FWRD", "BACK")
 
+    fun setBase64ImageToImageView(base64String: String, imageView: ImageView) {
+        // Decode the Base64 string to a byte array
+        val decodedBytes = Base64.decode(base64String, Base64.DEFAULT)
+
+        // Convert the byte array into a Bitmap
+        val bitmap = BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+
+        imageView.setImageBitmap(bitmap)
+    }
+
     private fun refreshState(){
         fanSwitch.isChecked = false
         autoModeSwitch.isChecked = false
-        speedSlider.setValues(50f)
+        speedSlider.setValues(100f)
 
         Firebase.setDatabaseValue("STRAFE", MOVEMENTSTATE[0])
         Firebase.setDatabaseValue("FAN", isChecked = fanSwitch.isChecked)
         Firebase.setDatabaseValue("AUTO", isChecked = autoModeSwitch.isChecked)
-        Firebase.setDatabaseValue("SPEED", speedValue = speedSlider.values[0].toDouble())
+        Firebase.setDatabaseValue("SPEED", speedValue = (speedSlider.values[0].toDouble() * 0.65)/100)
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -48,6 +69,22 @@ class DetailActivity : AppCompatActivity() {
 
         // utility
             // camera
+        camView = findViewById(R.id.camView)
+        camView.rotation = 180f
+        camDB = Firebase.db.getReference("CAM")
+        camDB.addValueEventListener(object  : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val camBase64Value = snapshot.getValue(String::class.java)
+                if (camBase64Value != null){
+                    setBase64ImageToImageView(camBase64Value, camView)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("Firebase", "Database Error: ${error.message}")
+            }
+
+        })
 
             // fan
         fanSwitch = findViewById(R.id.fanSwitch)
@@ -70,10 +107,11 @@ class DetailActivity : AppCompatActivity() {
 
         speedSlider.addOnChangeListener{ slider, value, fromuser ->
             val decimalFormat = DecimalFormat("#.##")
-            val speedMultiplier = decimalFormat.format(slider.values[0]).toDouble()
+            val speedMultiplier = (decimalFormat.format((slider.values[0] * 0.65)/ 100)).toDouble()
 
             lastSliderValueRunnable?.let { handler.removeCallbacks(it) }
             lastSliderValueRunnable = Runnable {
+                println("$speedMultiplier")
                 Firebase.setDatabaseValue( "SPEED", speedValue = speedMultiplier)
             }
             handler.postDelayed(lastSliderValueRunnable!!, 200)

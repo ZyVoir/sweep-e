@@ -47,9 +47,10 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
+        android:id="@+id/camView"
         android:layout_marginTop="20dp"
-        android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_width="800px"
+        android:layout_height="600px"
         android:src="@drawable/appicon"/>
 
     <LinearLayout
